@@ -1,0 +1,35 @@
+name: "Jsonnet Format Check"
+description: >
+  Runs `jsonnetfmt -i` over a directory tree of Jsonnet/libsonnet files and
+  fails if it produced any changes, i.e. enforces that all committed files
+  are already correctly formatted.
+inputs:
+  path:
+    description: "Root directory to search for Jsonnet files."
+    required: false
+    default: "."
+  exclude-path:
+    description: "A `find -not -path` glob to exclude (e.g. vendored dependencies)."
+    required: false
+    default: "./deps/*"
+  jsonnet-version:
+    description: "go-jsonnet release version to install, without the leading 'v'."
+    required: false
+    default: "0.20.0"
+runs:
+  using: "composite"
+  steps:
+    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v0
+      with:
+        version: ${{ inputs.jsonnet-version }}
+
+    - shell: bash
+      run: |
+        set -euo pipefail
+        files=$(find "${{ inputs.path }}" -name '*.*sonnet' -not -path "${{ inputs.exclude-path }}")
+        if [ -z "$files" ]; then
+          echo "No Jsonnet files found to format."
+          exit 0
+        fi
+        echo "$files" | xargs jsonnetfmt -i
+        git -c color.ui=always diff --exit-code

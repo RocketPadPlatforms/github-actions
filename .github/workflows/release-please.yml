@@ -1,0 +1,48 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: simple
+
+      - uses: actions/checkout@v5
+        if: ${{ steps.release.outputs.release_created }}
+
+      # release-please only tags the exact release (e.g. v0.1.0). Every
+      # `uses: .../@v0` reference in this repo (README examples, and the
+      # task actions calling the setup-* actions internally) depends on a
+      # floating `v0`/`v0.<minor>` tag also existing and following the
+      # latest release within that major version - otherwise consumers
+      # pinned to `@v0` would never receive fixes. This step maintains
+      # those floating tags; it does not run release-please's own logic.
+      - name: Move floating v${{ steps.release.outputs.major }} / v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} tags
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          major="v${{ steps.release.outputs.major }}"
+          minor="v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
+          sha="${{ steps.release.outputs.sha }}"
+
+          for tag in "$major" "$minor"; do
+            git tag -d "$tag" 2>/dev/null || true
+            git push origin ":refs/tags/$tag" 2>/dev/null || true
+            git tag -a "$tag" -m "Release $tag" "$sha"
+            git push origin "refs/tags/$tag"
+          done

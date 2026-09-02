@@ -1,0 +1,49 @@
+name: "Setup Jsonnet"
+description: >
+  Installs jsonnet, jsonnetfmt and jsonnet-lint (google/go-jsonnet) from the
+  project's official GitHub release binaries and adds them to PATH. No
+  container image required.
+inputs:
+  version:
+    description: "go-jsonnet release version to install, without the leading 'v' (e.g. 0.20.0)."
+    required: false
+    default: "0.20.0"
+runs:
+  using: "composite"
+  steps:
+    - name: Install go-jsonnet ${{ inputs.version }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ inputs.version }}"
+
+        os="$(uname -s)" # Linux or Darwin - matches the release asset naming exactly.
+        arch="$(uname -m)"
+        case "$arch" in
+          x86_64) arch="x86_64" ;;
+          aarch64|arm64) arch="arm64" ;;
+          *)
+            echo "::error::Unsupported architecture: $arch" >&2
+            exit 1
+            ;;
+        esac
+
+        tmpdir="$(mktemp -d)"
+        trap 'rm -rf "$tmpdir"' EXIT
+
+        url="https://github.com/google/go-jsonnet/releases/download/v${version}/go-jsonnet_${version}_${os}_${arch}.tar.gz"
+        echo "Downloading ${url}"
+        curl -fsSL -o "${tmpdir}/go-jsonnet.tar.gz" "${url}"
+        tar -xzf "${tmpdir}/go-jsonnet.tar.gz" -C "${tmpdir}"
+
+        sudo install -m 0755 "${tmpdir}/jsonnet" /usr/local/bin/jsonnet
+        sudo install -m 0755 "${tmpdir}/jsonnetfmt" /usr/local/bin/jsonnetfmt
+        sudo install -m 0755 "${tmpdir}/jsonnet-lint" /usr/local/bin/jsonnet-lint
+
+    - name: Verify installation
+      shell: bash
+      run: |
+        set -euo pipefail
+        jsonnet --version
+        jsonnetfmt --version
+        command -v jsonnet-lint

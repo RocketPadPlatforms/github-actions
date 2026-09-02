@@ -1,0 +1,103 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the go-jsonnet version pinned as the default `version` input of setup-jsonnet.",
+      "managerFilePatterns": [
+        "/^actions/setup-jsonnet/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "default:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "google/go-jsonnet",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the kubeconform version pinned as the default `version` input of setup-kubeconform.",
+      "managerFilePatterns": [
+        "/^actions/setup-kubeconform/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "default:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "yannh/kubeconform",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the vendir version pinned as the default `version` input of setup-vendir.",
+      "managerFilePatterns": [
+        "/^actions/setup-vendir/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "default:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "carvel-dev/vendir",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the go-jsonnet version pinned as the default `jsonnet-version` input.",
+      "managerFilePatterns": [
+        "/^actions/jsonnet-render/action\\.yml$/",
+        "/^actions/jsonnet-lint/action\\.yml$/",
+        "/^actions/jsonnet-fmt-check/action\\.yml$/",
+        "/^actions/jsonnet-test/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "jsonnet-version:[\\s\\S]*?default:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "google/go-jsonnet",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the kubeconform version pinned as the default `kubeconform-version` input of kubeconform-validate.",
+      "managerFilePatterns": [
+        "/^actions/kubeconform-validate/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "kubeconform-version:[\\s\\S]*?default:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "yannh/kubeconform",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the vendir version pinned as the default `vendir-version` input of vendir-check.",
+      "managerFilePatterns": [
+        "/^actions/vendir-check/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "vendir-version:[\\s\\S]*?default:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "carvel-dev/vendir",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Batch every pinned toolchain-version bump (across all actions) into a single PR per tool, instead of one PR per file.",
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["google/go-jsonnet", "yannh/kubeconform", "carvel-dev/vendir"],
+      "groupName": "{{packageName}} pinned version"
+    }
+  ]
+}

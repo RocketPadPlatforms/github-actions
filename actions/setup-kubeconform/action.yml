@@ -1,0 +1,42 @@
+name: "Setup kubeconform"
+description: >
+  Installs kubeconform (yannh/kubeconform) from its official GitHub release
+  binaries and adds it to PATH. No container image required.
+inputs:
+  version:
+    description: "kubeconform release version to install, with the leading 'v' (e.g. v0.8.0)."
+    required: false
+    default: "v0.8.0"
+runs:
+  using: "composite"
+  steps:
+    - name: Install kubeconform ${{ inputs.version }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ inputs.version }}"
+
+        os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+        arch="$(uname -m)"
+        case "$arch" in
+          x86_64|amd64) arch="amd64" ;;
+          aarch64|arm64) arch="arm64" ;;
+          *)
+            echo "::error::Unsupported architecture: $arch" >&2
+            exit 1
+            ;;
+        esac
+
+        tmpdir="$(mktemp -d)"
+        trap 'rm -rf "$tmpdir"' EXIT
+
+        url="https://github.com/yannh/kubeconform/releases/download/${version}/kubeconform-${os}-${arch}.tar.gz"
+        echo "Downloading ${url}"
+        curl -fsSL -o "${tmpdir}/kubeconform.tar.gz" "${url}"
+        tar -xzf "${tmpdir}/kubeconform.tar.gz" -C "${tmpdir}"
+
+        sudo install -m 0755 "${tmpdir}/kubeconform" /usr/local/bin/kubeconform
+
+    - name: Verify installation
+      shell: bash
+      run: kubeconform -v

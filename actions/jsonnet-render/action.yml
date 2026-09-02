@@ -1,0 +1,51 @@
+name: "Jsonnet Render"
+description: "Renders a Jsonnet entrypoint file to JSON or a YAML stream."
+inputs:
+  file:
+    description: "Path to the Jsonnet entrypoint file to render."
+    required: true
+  output-file:
+    description: "Path to write the rendered output to. Defaults to '<file>.json'."
+    required: false
+    default: ""
+  format:
+    description: "Output format: 'yaml-stream' or 'json'."
+    required: false
+    default: "yaml-stream"
+  args:
+    description: "Extra raw arguments passed to `jsonnet` (e.g. '--tla-code root=true')."
+    required: false
+    default: ""
+  jsonnet-version:
+    description: "go-jsonnet release version to install, without the leading 'v'."
+    required: false
+    default: "0.20.0"
+outputs:
+  output-file:
+    description: "The path the rendered output was written to."
+    value: ${{ steps.render.outputs.output-file }}
+runs:
+  using: "composite"
+  steps:
+    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v0
+      with:
+        version: ${{ inputs.jsonnet-version }}
+
+    - id: render
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        out="${{ inputs.output-file }}"
+        if [ -z "$out" ]; then
+          out="${{ inputs.file }}.json"
+        fi
+        mkdir -p "$(dirname "$out")"
+
+        format_flag="--yaml-stream"
+        if [ "${{ inputs.format }}" = "json" ]; then
+          format_flag=""
+        fi
+
+        jsonnet $format_flag --output-file "$out" ${{ inputs.args }} "${{ inputs.file }}"
+        echo "output-file=$out" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,38 @@
+name: "Jsonnet Test"
+description: >
+  Evaluates every *_test.jsonnet file under a directory tree (e.g. jsonnetunit
+  style tests) and fails if any of them error out.
+inputs:
+  path:
+    description: "Root directory to search for test files."
+    required: false
+    default: "."
+  exclude-path:
+    description: "A `find -not -path` glob to exclude (e.g. vendored dependencies)."
+    required: false
+    default: "./deps/*"
+  jsonnet-version:
+    description: "go-jsonnet release version to install, without the leading 'v'."
+    required: false
+    default: "0.20.0"
+runs:
+  using: "composite"
+  steps:
+    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v0
+      with:
+        version: ${{ inputs.jsonnet-version }}
+
+    - shell: bash
+      run: |
+        set -euo pipefail
+        status=0
+        files=$(find "${{ inputs.path }}" -name '*_test.jsonnet' -not -path "${{ inputs.exclude-path }}")
+        if [ -z "$files" ]; then
+          echo "No *_test.jsonnet files found."
+          exit 0
+        fi
+        for f in $files; do
+          echo "=== ${f} ==="
+          jsonnet "${f}" || status=1
+        done
+        exit "$status"

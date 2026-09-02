@@ -1,0 +1,43 @@
+name: "Vendir Check"
+description: >
+  Verifies that a committed deps/vendor/ tree is a faithful, reproducible
+  materialization of vendir.yml + vendir.lock.yml, by re-running `vendir sync
+  -l` (locked mode, pinned to vendir.lock.yml) and failing on any diff. Does
+  not pick up upstream movement for mutable refs - that is a deliberate,
+  separate action (bump the pin, run `vendir sync` without `-l`, review the
+  diff).
+inputs:
+  working-directory:
+    description: "Directory containing vendir.yml/vendir.lock.yml."
+    required: false
+    default: "deps"
+  vendir-version:
+    description: "vendir release version to install, without the leading 'v'."
+    required: false
+    default: "0.46.0"
+  github-token:
+    description: >
+      Optional token used to authenticate git fetches against github.com,
+      for private dependencies vendir shells out to `git` for directly (and
+      therefore doesn't inherit the runner's checkout credentials). Leave
+      empty to rely on unauthenticated/public access.
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v0
+      with:
+        version: ${{ inputs.vendir-version }}
+
+    - shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        if [ -n "${{ inputs.github-token }}" ]; then
+          git config --global url."https://x-access-token:${{ inputs.github-token }}@github.com/".insteadOf "https://github.com/"
+        fi
+
+        vendir sync -l
+        git -c color.ui=always diff --exit-code -- vendor/ vendir.lock.yml

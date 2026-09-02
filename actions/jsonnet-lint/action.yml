@@ -1,0 +1,37 @@
+name: "Jsonnet Lint"
+description: "Runs jsonnet-lint over a directory tree of Jsonnet/libsonnet files."
+inputs:
+  path:
+    description: "Root directory to search for Jsonnet files."
+    required: false
+    default: "."
+  exclude-path:
+    description: "A `find -not -path` glob to exclude (e.g. vendored dependencies)."
+    required: false
+    default: "./deps/*"
+  extra-find-args:
+    description: >
+      Additional raw `find` predicates appended to the search, e.g.
+      "-path './apps/*'" to further restrict which files are linted.
+    required: false
+    default: ""
+  jsonnet-version:
+    description: "go-jsonnet release version to install, without the leading 'v'."
+    required: false
+    default: "0.20.0"
+runs:
+  using: "composite"
+  steps:
+    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v0
+      with:
+        version: ${{ inputs.jsonnet-version }}
+
+    - shell: bash
+      run: |
+        set -euo pipefail
+        files=$(find "${{ inputs.path }}" -name '*.*sonnet' -not -path "${{ inputs.exclude-path }}" ${{ inputs.extra-find-args }})
+        if [ -z "$files" ]; then
+          echo "No Jsonnet files found to lint."
+          exit 0
+        fi
+        echo "$files" | xargs jsonnet-lint

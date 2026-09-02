@@ -1,0 +1,59 @@
+name: "Kubeconform Validate"
+description: >
+  Validates a rendered Kubernetes manifest file against upstream core schemas
+  and the datreeio/CRDs-catalog, producing a JUnit report. Mirrors the schema
+  catalog previously used by gitlab-ci-templates' kubeconform.gitlab-ci.yml.
+inputs:
+  file:
+    description: "Path to the rendered manifest file (JSON array or YAML stream) to validate."
+    required: true
+  kubernetes-version:
+    description: "Kubernetes version to validate against, or 'master' to always use the newest schemas."
+    required: false
+    default: "master"
+  output-file:
+    description: "Where to write the JUnit XML report. Defaults to '<file>.junit.xml'."
+    required: false
+    default: ""
+  cache-dir:
+    description: "Directory kubeconform caches downloaded schemas in."
+    required: false
+    default: "./.kubeconform"
+  kubeconform-version:
+    description: "kubeconform release version to install, with the leading 'v'."
+    required: false
+    default: "v0.8.0"
+outputs:
+  output-file:
+    description: "The path the JUnit report was written to."
+    value: ${{ steps.validate.outputs.output-file }}
+runs:
+  using: "composite"
+  steps:
+    - uses: RocketPadPlatforms/github-actions/actions/setup-kubeconform@v0
+      with:
+        version: ${{ inputs.kubeconform-version }}
+
+    - id: validate
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        out="${{ inputs.output-file }}"
+        if [ -z "$out" ]; then
+          out="${{ inputs.file }}.junit.xml"
+        fi
+        mkdir -p "$(dirname "$out")" "${{ inputs.cache-dir }}"
+
+        # Workaround for https://github.com/yannh/kubeconform/issues/100#issuecomment-1096832969
+        kubeconform \
+          -kubernetes-version "${{ inputs.kubernetes-version }}" \
+          -cache "${{ inputs.cache-dir }}" \
+          -output "junit" \
+          -schema-location "default" \
+          -schema-location "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}/{{ .ResourceKind }}{{ .KindSuffix }}.json" \
+          -schema-location "https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{ .Group }}/{{ .ResourceKind }}_{{ .ResourceAPIVersion }}.json" \
+          "${{ inputs.file }}" \
+          > "$out"
+
+        echo "output-file=$out" >> "$GITHUB_OUTPUT"
