@@ -47,6 +47,7 @@ runs:
         mkdir -p "$(dirname "$out")" "${{ inputs.cache-dir }}"
 
         # Workaround for https://github.com/yannh/kubeconform/issues/100#issuecomment-1096832969
+        set +e
         kubeconform \
           -kubernetes-version "${{ inputs.kubernetes-version }}" \
           -cache "${{ inputs.cache-dir }}" \
@@ -56,5 +57,27 @@ runs:
           -schema-location "https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{ .Group }}/{{ .ResourceKind }}_{{ .ResourceAPIVersion }}.json" \
           "${{ inputs.file }}" \
           > "$out"
+        status=$?
+        set -e
 
         echo "output-file=$out" >> "$GITHUB_OUTPUT"
+
+        tests=$(grep -o 'tests="[0-9]*"' "$out" | head -1 | grep -o '[0-9]*' || true)
+        failures=$(grep -o 'failures="[0-9]*"' "$out" | head -1 | grep -o '[0-9]*' || true)
+
+        {
+          echo "## Kubeconform Validate"
+          echo
+          if [ "$status" -eq 0 ]; then
+            echo "✅ All resources valid."
+          else
+            echo "❌ Validation failed."
+          fi
+          echo
+          echo "| Metric | Value |"
+          echo "|---|---|"
+          echo "| Resources validated | ${tests:-0} |"
+          echo "| Failures | ${failures:-0} |"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        exit "$status"
