@@ -27,13 +27,41 @@ runs:
       run: |
         set -euo pipefail
         status=0
+        run=0
+        failed=0
+        failed_files=""
         files=$(find "${{ inputs.path }}" -name '*_test.jsonnet' -not -path "${{ inputs.exclude-path }}")
+
+        {
+          echo "## Jsonnet Test"
+          echo
+        } >> "$GITHUB_STEP_SUMMARY"
+
         if [ -z "$files" ]; then
           echo "No *_test.jsonnet files found."
+          echo "No *_test.jsonnet files found." >> "$GITHUB_STEP_SUMMARY"
           exit 0
         fi
+
         for f in $files; do
           echo "=== ${f} ==="
-          jsonnet "${f}" || status=1
+          run=$((run + 1))
+          if ! jsonnet "${f}"; then
+            status=1
+            failed=$((failed + 1))
+            failed_files="${failed_files}${f}"$'\n'
+          fi
         done
+
+        passed=$((run - failed))
+        if [ "$status" -eq 0 ]; then
+          echo "✅ $passed/$run tests passed." >> "$GITHUB_STEP_SUMMARY"
+        else
+          {
+            echo "❌ $passed/$run tests passed, $failed failed:"
+            echo
+            printf '%s' "$failed_files" | sed '/^$/d;s/^/- `/;s/$/`/'
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
         exit "$status"

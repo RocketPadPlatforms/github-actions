@@ -41,4 +41,24 @@ runs:
         fi
 
         vendir sync -l
-        git -c color.ui=always diff --exit-code -- vendor/ vendir.lock.yml
+
+        changed_files=$(git diff --name-only -- vendor/ vendir.lock.yml)
+
+        {
+          echo "## Vendir Check"
+          echo
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ -n "$changed_files" ]; then
+          git -c color.ui=always diff -- vendor/ vendir.lock.yml
+          {
+            echo "❌ Vendored directory has drifted:"
+            echo
+            echo "$changed_files" | sed 's/^/- `/;s/$/`/'
+            echo
+            echo "Run \`vendir sync\` and review/commit the diff."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi
+
+        echo "✅ Vendored directory matches \`vendir.lock.yml\` — no drift detected." >> "$GITHUB_STEP_SUMMARY"

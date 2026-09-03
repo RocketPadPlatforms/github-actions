@@ -28,9 +28,31 @@ runs:
       run: |
         set -euo pipefail
         files=$(find "${{ inputs.path }}" -name '*.*sonnet' -not -path "${{ inputs.exclude-path }}")
+
+        {
+          echo "## Jsonnet Format Check"
+          echo
+        } >> "$GITHUB_STEP_SUMMARY"
+
         if [ -z "$files" ]; then
           echo "No Jsonnet files found to format."
+          echo "No Jsonnet files found to format." >> "$GITHUB_STEP_SUMMARY"
           exit 0
         fi
+
         echo "$files" | xargs jsonnetfmt -i
-        git -c color.ui=always diff --exit-code
+
+        changed_files=$(git diff --name-only -- .)
+        if [ -n "$changed_files" ]; then
+          git -c color.ui=always diff
+          {
+            echo "❌ $(echo "$changed_files" | wc -l) file(s) need reformatting:"
+            echo
+            echo "$changed_files" | sed 's/^/- `/;s/$/`/'
+            echo
+            echo "Run \`jsonnetfmt -i\` locally and commit the changes."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi
+
+        echo "✅ All files already formatted correctly." >> "$GITHUB_STEP_SUMMARY"
