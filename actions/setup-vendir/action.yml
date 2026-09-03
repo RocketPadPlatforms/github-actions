@@ -6,7 +6,7 @@ inputs:
   version:
     description: "vendir release version to install, without the leading 'v' (e.g. 0.46.0)."
     required: false
-    default: "0.46.0"
+    default: "0.46.1"
 runs:
   using: "composite"
   steps:
