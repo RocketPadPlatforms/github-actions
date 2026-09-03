@@ -18,7 +18,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v0
+    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
       with:
         version: ${{ inputs.jsonnet-version }}
 
