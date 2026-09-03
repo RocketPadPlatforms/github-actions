@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/RocketPadPlatforms/github-actions/compare/v1.0.0...v1.0.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **actions:** stop duplicating tool versions in task actions ([5b95848](https://github.com/RocketPadPlatforms/github-actions/commit/5b958489ab877cb7bba78edb9ef98423c8c7a63f))
+
 ## 1.0.0 (2026-09-03)
 
 
