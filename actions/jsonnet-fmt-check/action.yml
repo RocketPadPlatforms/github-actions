@@ -13,16 +13,17 @@ inputs:
     required: false
     default: "./deps/*"
   jsonnet-version:
-    description: "go-jsonnet release version to install, without the leading 'v'."
+    description: "go-jsonnet release version to install, without the leading 'v'. Leave empty to use setup-jsonnet's default."
     required: false
-    default: "0.20.0"
 runs:
   using: "composite"
   steps:
-    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
+    - if: inputs.jsonnet-version != ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
       with:
         version: ${{ inputs.jsonnet-version }}
-
+    - if: inputs.jsonnet-version == ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
     - shell: bash
       run: |
         set -euo pipefail

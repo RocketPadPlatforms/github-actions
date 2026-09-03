@@ -17,9 +17,8 @@ inputs:
     required: false
     default: ""
   jsonnet-version:
-    description: "go-jsonnet release version to install, without the leading 'v'."
+    description: "go-jsonnet release version to install, without the leading 'v'. Leave empty to use setup-jsonnet's default."
     required: false
-    default: "0.20.0"
 outputs:
   output-file:
     description: "The path the rendered output was written to."
@@ -27,10 +26,12 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
+    - if: inputs.jsonnet-version != ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
       with:
         version: ${{ inputs.jsonnet-version }}
-
+    - if: inputs.jsonnet-version == ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
     - id: render
       shell: bash
       run: |
