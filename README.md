@@ -4,10 +4,6 @@ Common, reusable GitHub Actions used across RocketPadPlatforms repositories. Thi
 
 Every tool is installed by downloading its official pinned release binary directly from GitHub Releases — there is no CI container image to build, publish or keep in sync (unlike the previous `jsonnet-ci-image`). Pinned versions are tracked and bumped automatically by [Renovate](./renovate.json).
 
-## Access
-
-This repository is **private**. For other private repositories in the `RocketPadPlatforms` organization to be able to reference these actions with `uses: RocketPadPlatforms/github-actions/...@<ref>`, this repository's **Settings → Actions → General → Access** must be set to *"Accessible from repositories in the RocketPadPlatforms organization"*.
-
 ## Actions
 
 ### Setup actions
