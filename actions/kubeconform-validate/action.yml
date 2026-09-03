@@ -20,9 +20,8 @@ inputs:
     required: false
     default: "./.kubeconform"
   kubeconform-version:
-    description: "kubeconform release version to install, with the leading 'v'."
+    description: "kubeconform release version to install, with the leading 'v'. Leave empty to use setup-kubeconform's default."
     required: false
-    default: "v0.8.0"
 outputs:
   output-file:
     description: "The path the JUnit report was written to."
@@ -30,10 +29,12 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: RocketPadPlatforms/github-actions/actions/setup-kubeconform@v1
+    - if: inputs.kubeconform-version != ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-kubeconform@v1
       with:
         version: ${{ inputs.kubeconform-version }}
-
+    - if: inputs.kubeconform-version == ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-kubeconform@v1
     - id: validate
       shell: bash
       run: |

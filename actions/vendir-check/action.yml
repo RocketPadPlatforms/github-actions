@@ -12,9 +12,8 @@ inputs:
     required: false
     default: "deps"
   vendir-version:
-    description: "vendir release version to install, without the leading 'v'."
+    description: "vendir release version to install, without the leading 'v'. Leave empty to use setup-vendir's default."
     required: false
-    default: "0.46.0"
   github-token:
     description: >
       Optional token used to authenticate git fetches against github.com,
@@ -26,10 +25,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
+    - if: inputs.vendir-version != ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
       with:
         version: ${{ inputs.vendir-version }}
-
+    - if: inputs.vendir-version == ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
     - shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
