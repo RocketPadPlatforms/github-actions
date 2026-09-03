@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.0.1...v1.1.0) (2026-09-03)
+
+
+### Features
+
+* add GitHub Actions job summaries to task actions ([54c3f0e](https://github.com/RocketPadPlatforms/github-actions/commit/54c3f0eb604438372d47a0d8a2116189366a7a59))
+
 ## [1.0.1](https://github.com/RocketPadPlatforms/github-actions/compare/v1.0.0...v1.0.1) (2026-09-03)
 
 
