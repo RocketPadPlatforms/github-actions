@@ -19,7 +19,7 @@ jobs:
         with:
           release-type: simple
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         if: ${{ steps.release.outputs.release_created }}
 
       # release-please only tags the exact release (e.g. v1.0.0). Every

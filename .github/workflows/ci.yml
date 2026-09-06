@@ -10,7 +10,7 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Check workflow and action files
         uses: docker://rhysd/actionlint:latest
         with:
@@ -19,7 +19,7 @@ jobs:
   smoke-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: ./actions/setup-jsonnet
       - uses: ./actions/setup-kubeconform
       - uses: ./actions/setup-vendir
