@@ -1,0 +1,52 @@
+name: "OpenTofu Validate"
+description: >
+  Runs `tofu init -backend=false` followed by `tofu validate` in a directory,
+  checking the configuration is syntactically valid and internally
+  consistent without needing real provider credentials or backend access.
+inputs:
+  working-directory:
+    description: "Directory containing the OpenTofu configuration to validate."
+    required: false
+    default: "."
+  opentofu-version:
+    description: "OpenTofu release version to install, without the leading 'v'. Leave empty to use setup-opentofu's default."
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - if: inputs.opentofu-version != ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-opentofu@v1
+      with:
+        version: ${{ inputs.opentofu-version }}
+    - if: inputs.opentofu-version == ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-opentofu@v1
+    - shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        tofu init -backend=false -input=false
+
+        {
+          echo "## OpenTofu Validate"
+          echo
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        set +e
+        output=$(tofu validate -no-color 2>&1)
+        status=$?
+        set -e
+        echo "$output"
+
+        if [ "$status" -eq 0 ]; then
+          echo "✅ Configuration is valid." >> "$GITHUB_STEP_SUMMARY"
+        else
+          {
+            echo "❌ Validation failed:"
+            echo
+            echo '```'
+            echo "$output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        exit "$status"

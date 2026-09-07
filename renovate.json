@@ -48,6 +48,19 @@
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "carvel-dev/vendir",
       "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the OpenTofu version pinned as the default `version` input of setup-opentofu.",
+      "managerFilePatterns": [
+        "/^actions/setup-opentofu/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "default:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "opentofu/opentofu",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
     }
   ]
 }

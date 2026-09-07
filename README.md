@@ -16,6 +16,7 @@ custom scripting beyond what the task actions below cover.
 | [`actions/setup-jsonnet`](./actions/setup-jsonnet) | `jsonnet`, `jsonnetfmt`, `jsonnet-lint` ([google/go-jsonnet](https://github.com/google/go-jsonnet)) |
 | [`actions/setup-kubeconform`](./actions/setup-kubeconform) | `kubeconform` ([yannh/kubeconform](https://github.com/yannh/kubeconform)) |
 | [`actions/setup-vendir`](./actions/setup-vendir) | `vendir` ([carvel-dev/vendir](https://github.com/carvel-dev/vendir)) |
+| [`actions/setup-opentofu`](./actions/setup-opentofu) | `tofu` ([opentofu/opentofu](https://github.com/opentofu/opentofu)) |
 
 ```yaml
 - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
@@ -35,6 +36,8 @@ Higher-level actions that install the tool they need themselves and run one spec
 | [`actions/jsonnet-test`](./actions/jsonnet-test) | `jsonnet:test` | Evaluates every `*_test.jsonnet` file. |
 | [`actions/kubeconform-validate`](./actions/kubeconform-validate) | `.kubeconform` | Validates a rendered manifest file with kubeconform, JUnit output. |
 | [`actions/vendir-check`](./actions/vendir-check) | `vendir:check` | Fails if `deps/vendor/` drifted from `vendir.yml`/`vendir.lock.yml`. |
+| [`actions/opentofu-fmt-check`](./actions/opentofu-fmt-check) | `.opentofu:fmt` | Fails if `tofu fmt -recursive` would change any file. |
+| [`actions/opentofu-validate`](./actions/opentofu-validate) | `.opentofu:validate` | Runs `tofu init -backend=false` + `tofu validate`. |
 
 Example workflow (mirrors `base`'s current merge-request pipeline):
 
@@ -89,6 +92,28 @@ jobs:
       - uses: RocketPadPlatforms/github-actions/actions/vendir-check@v1
         with:
           github-token: ${{ secrets.VENDIR_GITHUB_TOKEN }} # only needed for private deps
+```
+
+Example Terraform/OpenTofu module workflow:
+
+```yaml
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: RocketPadPlatforms/github-actions/actions/opentofu-fmt-check@v1
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: RocketPadPlatforms/github-actions/actions/opentofu-validate@v1
 ```
 
 ## Versioning & tagging
