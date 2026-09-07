@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.1.0...v1.2.0) (2026-09-07)
+
+
+### Features
+
+* add OpenTofu setup/fmt-check/validate actions ([d8d4e98](https://github.com/RocketPadPlatforms/github-actions/commit/d8d4e989b6e2ecb75fff26af713799c6e0f68681))
+
 ## [1.1.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.0.1...v1.1.0) (2026-09-07)
 
 
