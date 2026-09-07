@@ -1,0 +1,52 @@
+name: "OpenTofu Format Check"
+description: >
+  Runs `tofu fmt -check -recursive` over a directory tree and fails if any
+  file is not already correctly formatted.
+inputs:
+  working-directory:
+    description: "Directory to check formatting in."
+    required: false
+    default: "."
+  opentofu-version:
+    description: "OpenTofu release version to install, without the leading 'v'. Leave empty to use setup-opentofu's default."
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - if: inputs.opentofu-version != ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-opentofu@v1
+      with:
+        version: ${{ inputs.opentofu-version }}
+    - if: inputs.opentofu-version == ''
+      uses: RocketPadPlatforms/github-actions/actions/setup-opentofu@v1
+    - shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+
+        {
+          echo "## OpenTofu Format Check"
+          echo
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        set +e
+        output=$(tofu fmt -check -recursive -diff 2>&1)
+        status=$?
+        set -e
+        echo "$output"
+
+        if [ "$status" -eq 0 ]; then
+          echo "✅ All files already formatted correctly." >> "$GITHUB_STEP_SUMMARY"
+        else
+          {
+            echo "❌ Some files need reformatting:"
+            echo
+            echo '```diff'
+            echo "$output"
+            echo '```'
+            echo
+            echo "Run \`tofu fmt -recursive\` locally and commit the changes."
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        exit "$status"

@@ -1,0 +1,40 @@
+name: "Setup OpenTofu"
+description: >
+  Installs OpenTofu (opentofu/opentofu) from its official GitHub release
+  binaries and adds it to PATH as `tofu`. No container image required.
+inputs:
+  version:
+    description: "OpenTofu release version to install, without the leading 'v' (e.g. 1.12.6)."
+    required: false
+    default: "1.12.6"
+runs:
+  using: "composite"
+  steps:
+    - name: Install OpenTofu ${{ inputs.version }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ inputs.version }}"
+
+        os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+        arch="$(uname -m)"
+        case "$arch" in
+          x86_64|amd64) arch="amd64" ;;
+          aarch64|arm64) arch="arm64" ;;
+          *)
+            echo "::error::Unsupported architecture: $arch" >&2
+            exit 1
+            ;;
+        esac
+
+        url="https://github.com/opentofu/opentofu/releases/download/v${version}/tofu_${version}_${os}_${arch}.zip"
+        tmpdir="$(mktemp -d)"
+        echo "Downloading ${url}"
+        curl -fsSL -o "${tmpdir}/tofu.zip" "${url}"
+        unzip -q "${tmpdir}/tofu.zip" tofu -d "${tmpdir}"
+        sudo install -m 0755 "${tmpdir}/tofu" /usr/local/bin/tofu
+        rm -rf "${tmpdir}"
+
+    - name: Verify installation
+      shell: bash
+      run: tofu version
