@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.2.0...v1.3.0) (2026-09-08)
+
+
+### Features
+
+* add github-app-git-auth action ([94da4cd](https://github.com/RocketPadPlatforms/github-actions/commit/94da4cd95cd5505411ff769664ec64cdb10aa8f4))
+
 ## [1.2.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.1.0...v1.2.0) (2026-09-07)
 
 
