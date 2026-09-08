@@ -1,0 +1,42 @@
+name: "GitHub App Git Auth"
+description: >
+  Mints a short-lived installation token for a GitHub App and configures git
+  to use it for all github.com HTTPS fetches, so later steps in the job
+  (e.g. `tofu init` fetching a Terraform module, or any other plain `git`
+  invocation) can access private repositories the App is installed on -
+  without inheriting or leaking the current job's own checkout credentials.
+inputs:
+  app-id:
+    description: "GitHub App ID."
+    required: true
+  private-key:
+    description: "GitHub App private key (PEM)."
+    required: true
+  owner:
+    description: "Owner (org or user) to scope the installation token to."
+    required: false
+    default: "RocketPadPlatforms"
+  repositories:
+    description: >
+      Space-separated list of repository names (without the owner prefix)
+      the token should be scoped to. The App must already be installed on
+      these repositories.
+    required: true
+outputs:
+  token:
+    description: "The minted installation token, in case a step needs it directly (e.g. for the GitHub API)."
+    value: ${{ steps.app-token.outputs.token }}
+runs:
+  using: "composite"
+  steps:
+    - id: app-token
+      uses: actions/create-github-app-token@v2
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: ${{ inputs.owner }}
+        repositories: ${{ inputs.repositories }}
+    - shell: bash
+      run: |
+        set -euo pipefail
+        git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"

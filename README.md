@@ -38,6 +38,7 @@ Higher-level actions that install the tool they need themselves and run one spec
 | [`actions/vendir-check`](./actions/vendir-check) | `vendir:check` | Fails if `deps/vendor/` drifted from `vendir.yml`/`vendir.lock.yml`. |
 | [`actions/opentofu-fmt-check`](./actions/opentofu-fmt-check) | `.opentofu:fmt` | Fails if `tofu fmt -recursive` would change any file. |
 | [`actions/opentofu-validate`](./actions/opentofu-validate) | `.opentofu:validate` | Runs `tofu init -backend=false` + `tofu validate`. |
+| [`actions/github-app-git-auth`](./actions/github-app-git-auth) | n/a | Mints a GitHub App installation token and configures git to use it for `github.com` HTTPS fetches (e.g. private Terraform module sources). |
 
 Example workflow (mirrors `base`'s current merge-request pipeline):
 
@@ -113,6 +114,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # Only needed if a module source in this configuration points at a
+      # private repository (e.g. git::https://github.com/OWNER/private-module.git).
+      - uses: RocketPadPlatforms/github-actions/actions/github-app-git-auth@v1
+        with:
+          app-id: ${{ secrets.RPP_CI_REPO_READER_APP_ID }}
+          private-key: ${{ secrets.RPP_CI_REPO_READER_PRIVATE_KEY }}
+          repositories: private-module
       - uses: RocketPadPlatforms/github-actions/actions/opentofu-validate@v1
 ```
 
