@@ -6,7 +6,7 @@ inputs:
   version:
     description: "OpenTofu release version to install, without the leading 'v' (e.g. 1.12.6)."
     required: false
-    default: "1.12.6"
+    default: "1.13.1"
 runs:
   using: "composite"
   steps:
