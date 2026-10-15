@@ -22,6 +22,14 @@ inputs:
       empty to rely on unauthenticated/public access.
     required: false
     default: ""
+  git-url-prefix:
+    description: >
+      github.com URL prefix the github-token is used for. Defaults to
+      https://github.com/<repository owner>/. Set it to https://github.com/
+      for a token that also has to reach repositories of other owners. Only
+      used when github-token is set.
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -33,11 +41,30 @@ runs:
       uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
     - shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN_INPUT: ${{ inputs.github-token }}
+        GIT_URL_PREFIX_INPUT: ${{ inputs.git-url-prefix }}
+        REPOSITORY_OWNER: ${{ github.repository_owner }}
       run: |
         set -euo pipefail
 
-        if [ -n "${{ inputs.github-token }}" ]; then
-          git config --global url."https://x-access-token:${{ inputs.github-token }}@github.com/".insteadOf "https://github.com/"
+        if [ -n "$GITHUB_TOKEN_INPUT" ]; then
+          # Hand the token to git through environment variables for this step
+          # only. `git config --global` would write it into the global git
+          # config, which persists on self-hosted runners: the token is
+          # revoked when the job ends, but its rewrite rule stays and later
+          # jobs pick it up first. A prefix that includes the owner is also
+          # preferred over a leftover rule for plain https://github.com/.
+          prefix="${GIT_URL_PREFIX_INPUT:-https://github.com/${REPOSITORY_OWNER}/}"
+          case "$prefix" in
+            https://github.com/*) ;;
+            *) echo "::error::git-url-prefix must start with https://github.com/" >&2; exit 1 ;;
+          esac
+
+          index="${GIT_CONFIG_COUNT:-0}"
+          export "GIT_CONFIG_KEY_${index}=url.https://x-access-token:${GITHUB_TOKEN_INPUT}@${prefix#https://}.insteadOf"
+          export "GIT_CONFIG_VALUE_${index}=${prefix}"
+          export GIT_CONFIG_COUNT=$((index + 1))
         fi
 
         vendir sync -l

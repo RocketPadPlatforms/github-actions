@@ -1,7 +1,9 @@
 name: "GitHub App Git Auth"
 description: >
   Mints a short-lived installation token for a GitHub App and configures git
-  to use it for all github.com HTTPS fetches, so later steps in the job
+  to use it for github.com HTTPS fetches of the owner's repositories for the
+  rest of the job (through GIT_CONFIG_* environment variables, nothing is
+  written to the global git config), so later steps in the job
   (e.g. `tofu init` fetching a Terraform module, or any other plain `git`
   invocation) can access private repositories the App is installed on -
   without inheriting or leaking the current job's own checkout credentials.
@@ -37,6 +39,22 @@ runs:
         owner: ${{ inputs.owner }}
         repositories: ${{ inputs.repositories }}
     - shell: bash
+      env:
+        TOKEN: ${{ steps.app-token.outputs.token }}
+        OWNER: ${{ inputs.owner }}
       run: |
         set -euo pipefail
-        git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
+
+        # Export the rewrite rule to the later steps of this job through
+        # GIT_CONFIG_* variables instead of `git config --global`. The global
+        # git config persists on self-hosted runners: the token is revoked
+        # when the job ends, but its rewrite rule would stay and later jobs
+        # would pick it up first. The owner in the prefix also makes this
+        # rule win over a leftover one for plain https://github.com/.
+        prefix="https://github.com/${OWNER}/"
+        index="${GIT_CONFIG_COUNT:-0}"
+        {
+          echo "GIT_CONFIG_KEY_${index}=url.https://x-access-token:${TOKEN}@github.com/${OWNER}/.insteadOf"
+          echo "GIT_CONFIG_VALUE_${index}=${prefix}"
+          echo "GIT_CONFIG_COUNT=$((index + 1))"
+        } >> "$GITHUB_ENV"
