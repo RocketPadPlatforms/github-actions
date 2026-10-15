@@ -38,7 +38,7 @@ Higher-level actions that install the tool they need themselves and run one spec
 | [`actions/vendir-check`](./actions/vendir-check) | `vendir:check` | Fails if `deps/vendor/` drifted from `vendir.yml`/`vendir.lock.yml`. |
 | [`actions/opentofu-fmt-check`](./actions/opentofu-fmt-check) | `.opentofu:fmt` | Fails if `tofu fmt -recursive` would change any file. |
 | [`actions/opentofu-validate`](./actions/opentofu-validate) | `.opentofu:validate` | Runs `tofu init -backend=false` + `tofu validate`. |
-| [`actions/github-app-git-auth`](./actions/github-app-git-auth) | n/a | Mints a GitHub App installation token and configures git to use it for `github.com` HTTPS fetches (e.g. private Terraform module sources). |
+| [`actions/github-app-git-auth`](./actions/github-app-git-auth) | n/a | Mints a GitHub App installation token and configures git to use it for `github.com` HTTPS fetches of the owner's repositories for the rest of the job (e.g. private Terraform module sources). |
 
 Example workflow (mirrors `base`'s current merge-request pipeline):
 
@@ -93,6 +93,9 @@ jobs:
       - uses: RocketPadPlatforms/github-actions/actions/vendir-check@v1
         with:
           github-token: ${{ secrets.VENDIR_GITHUB_TOKEN }} # only needed for private deps
+          # The token is used for github.com/<repository owner>/ by default;
+          # set git-url-prefix: https://github.com/ if it has to reach
+          # repositories of other owners.
 ```
 
 Example Terraform/OpenTofu module workflow:
