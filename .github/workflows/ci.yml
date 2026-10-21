@@ -24,3 +24,82 @@ jobs:
       - uses: ./actions/setup-kubeconform
       - uses: ./actions/setup-vendir
       - uses: ./actions/setup-opentofu
+
+  # Runs actions/kind-registry-mirror against a kind cluster and a local
+  # zot pull-through cache on the kind network: no mirror, an unreachable
+  # mirror, and a working one that each default registry is pulled
+  # through.
+  kind-registry-mirror:
+    runs-on: ubuntu-latest
+    env:
+      CERTS_D: /etc/containerd/certs.d
+    steps:
+      - uses: actions/checkout@v7
+      - uses: helm/kind-action@v1.15.1
+        with:
+          config: .github/tests/kind-registry-mirror/kind-config.yaml
+          version: v0.33.0
+
+      - name: Without a mirror
+        uses: ./actions/kind-registry-mirror
+      - name: Expect no mirror configuration
+        run: |
+          set -euo pipefail
+          for node in $(kind get nodes --name chart-testing); do
+            test -z "$(docker exec "$node" find "$CERTS_D" -name hosts.toml 2>/dev/null || true)"
+          done
+
+      - name: With an unreachable mirror
+        uses: ./actions/kind-registry-mirror
+        with:
+          mirror: http://mirror.invalid:5000
+          timeout: "3"
+      - name: Expect no mirror configuration
+        run: |
+          set -euo pipefail
+          for node in $(kind get nodes --name chart-testing); do
+            test -z "$(docker exec "$node" find "$CERTS_D" -name hosts.toml 2>/dev/null || true)"
+          done
+
+      - name: Start zot as pull-through cache
+        run: |
+          set -euo pipefail
+          docker run -d --name zot --network kind \
+            -v "$PWD/.github/tests/kind-registry-mirror/zot-config.json:/etc/zot/config.json:ro" \
+            ghcr.io/project-zot/zot-linux-amd64:v2.1.22 serve /etc/zot/config.json
+          node="$(kind get nodes --name chart-testing | head -n 1)"
+          for _ in $(seq 30); do
+            docker exec "$node" curl -fsS -o /dev/null http://zot:5000/v2/ && exit 0
+            sleep 2
+          done
+          docker logs zot
+          exit 1
+
+      - name: With a working mirror
+        uses: ./actions/kind-registry-mirror
+        with:
+          mirror: http://zot:5000/
+      - name: Expect images to be pulled through the mirror
+        run: |
+          set -euo pipefail
+          node="$(kind get nodes --name chart-testing | tail -n 1)"
+          docker exec "$node" sh -c "cat $CERTS_D/*/hosts.toml"
+          images=(
+            docker.io/library/busybox:1.37.0
+            public.ecr.aws/docker/library/busybox:1.37.0
+            quay.io/prometheus/busybox:latest
+            ghcr.io/fluxcd/source-controller:v1.5.0
+            registry.k8s.io/pause:3.10
+          )
+          for image in "${images[@]}"; do
+            docker exec "$node" crictl pull "$image"
+          done
+          catalog="$(docker exec "$node" curl -fsS http://zot:5000/v2/_catalog)"
+          echo "$catalog"
+          for image in "${images[@]}"; do
+            jq -e --arg repo "${image%:*}" '.repositories | index($repo)' <<< "$catalog" > /dev/null \
+              || { echo "::error::$image was not pulled through the mirror"; exit 1; }
+          done
+      - name: Zot logs
+        if: failure()
+        run: docker logs zot

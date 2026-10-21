@@ -1,0 +1,12 @@
+# Cluster for testing actions/kind-registry-mirror. containerd must read
+# per-registry host configuration from /etc/containerd/certs.d, which is
+# what the action writes to.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.cri.v1.images".registry]
+    config_path = "/etc/containerd/certs.d"
+nodes:
+- role: control-plane
+- role: worker
