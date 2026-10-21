@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.3.0...v1.4.0) (2026-10-21)
+
+
+### Features
+
+* **kind-registry-mirror:** pull kind images via a mirror ([4837762](https://github.com/RocketPadPlatforms/github-actions/commit/4837762e932fddff3db8f3399739c76c28c9ae0b))
+
 ## [1.3.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.2.0...v1.3.0) (2026-09-08)
 
 
