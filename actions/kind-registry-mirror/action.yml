@@ -1,0 +1,91 @@
+name: "Kind Registry Mirror"
+description: >
+  Makes the containerd of every node in a kind cluster pull through a
+  registry mirror (e.g. a zot pull-through cache) that serves each upstream
+  registry under a path prefix named after it. Each node gets a hosts.toml
+  per registry that tries the mirror first and falls back to the registry
+  itself. Does nothing when `mirror` is empty, and only warns when the
+  nodes cannot reach the mirror.
+inputs:
+  mirror:
+    description: >
+      Base URL of the mirror, e.g. https://cache.example.com. An image
+      docker.io/library/redis is then pulled from
+      <mirror>/v2/docker.io/library/redis. Leave empty to skip.
+    required: false
+    default: ""
+  registries:
+    description: >
+      Registries to mirror, one `registry=upstream-url` per line. The
+      upstream URL is the fallback when the mirror fails.
+    required: false
+    default: |
+      docker.io=https://registry-1.docker.io
+      public.ecr.aws=https://public.ecr.aws
+      quay.io=https://quay.io
+      ghcr.io=https://ghcr.io
+      registry.k8s.io=https://registry.k8s.io
+  cluster-name:
+    description: "Name of the kind cluster."
+    required: false
+    default: "chart-testing"
+  timeout:
+    description: "Seconds to wait for the mirror's /v2/ endpoint to answer."
+    required: false
+    default: "10"
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      env:
+        MIRROR: ${{ inputs.mirror }}
+        REGISTRIES: ${{ inputs.registries }}
+        CLUSTER_NAME: ${{ inputs.cluster-name }}
+        TIMEOUT: ${{ inputs.timeout }}
+      run: |
+        set -euo pipefail
+
+        mirror="${MIRROR%/}"
+        if [ -z "$mirror" ]; then
+          echo "No mirror given, images are pulled from the registries directly."
+          exit 0
+        fi
+
+        mapfile -t nodes < <(kind get nodes --name "$CLUSTER_NAME")
+        if [ "${#nodes[@]}" -eq 0 ]; then
+          echo "::error::No nodes found for kind cluster '$CLUSTER_NAME'."
+          exit 1
+        fi
+
+        # Checked from a node, since the nodes pull the images and may
+        # see a different network than the runner.
+        if ! docker exec "${nodes[0]}" curl -fsS --max-time "$TIMEOUT" -o /dev/null "$mirror/v2/"; then
+          echo "::warning::Registry mirror $mirror is not reachable from the kind nodes, images are pulled from the registries directly."
+          exit 0
+        fi
+
+        configured=()
+        while IFS= read -r line; do
+          line="${line//[[:space:]]/}"
+          [ -z "$line" ] && continue
+          registry="${line%%=*}"
+          upstream="${line#*=}"
+          if [ -z "$registry" ] || [ "$registry" = "$line" ] || [ -z "$upstream" ]; then
+            echo "::error::Invalid registries entry '$line', expected registry=upstream-url."
+            exit 1
+          fi
+          hosts_toml="$(printf '%s\n' \
+            "server = \"$upstream\"" \
+            "" \
+            "[host.\"$mirror/v2/$registry\"]" \
+            "  capabilities = [\"pull\", \"resolve\"]" \
+            "  override_path = true")"
+          for node in "${nodes[@]}"; do
+            printf '%s\n' "$hosts_toml" | docker exec -i "$node" sh -c \
+              'mkdir -p "/etc/containerd/certs.d/$1" && cat > "/etc/containerd/certs.d/$1/hosts.toml"' \
+              sh "$registry"
+          done
+          configured+=("$registry")
+        done <<< "$REGISTRIES"
+
+        echo "Pulling through $mirror for: ${configured[*]} (nodes: ${nodes[*]})"
