@@ -103,3 +103,46 @@ jobs:
       - name: Zot logs
         if: failure()
         run: docker logs zot
+
+  # Runs actions/vendir-check against a fixture whose middle dependency has
+  # its tag moved after it was locked: it must fail by default, pass when
+  # that dependency is unpinned, and still fail on drift in the others.
+  vendir-check-unpinned-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./actions/setup-vendir
+      - run: .github/tests/vendir-check/fixture.sh "$RUNNER_TEMP/fixture"
+
+      - name: Locked commit of a moved tag, nothing unpinned
+        id: default
+        continue-on-error: true
+        uses: ./actions/vendir-check
+        with:
+          working-directory: ${{ runner.temp }}/fixture/work
+      - name: Expect failure
+        run: test "$OUTCOME" = failure
+        env:
+          OUTCOME: ${{ steps.default.outcome }}
+
+      - name: Moved tag unpinned
+        uses: ./actions/vendir-check
+        with:
+          working-directory: ${{ runner.temp }}/fixture/work
+          unpinned-paths: vendor/example.com/moving
+
+      - name: Drift in a pinned dependency
+        run: |
+          echo tampered > "$RUNNER_TEMP/fixture/work/vendor/example.com/pinned-a/file.txt"
+          git -C "$RUNNER_TEMP/fixture/work" -c user.name=ci -c user.email=ci@example.com commit -qam tamper
+      - name: Moved tag unpinned, others drifted
+        id: drift
+        continue-on-error: true
+        uses: ./actions/vendir-check
+        with:
+          working-directory: ${{ runner.temp }}/fixture/work
+          unpinned-paths: vendor/example.com/moving
+      - name: Expect failure
+        run: test "$OUTCOME" = failure
+        env:
+          OUTCOME: ${{ steps.drift.outcome }}

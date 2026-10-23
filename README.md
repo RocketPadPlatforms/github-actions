@@ -94,6 +94,11 @@ jobs:
       - uses: RocketPadPlatforms/github-actions/actions/vendir-check@v1
         with:
           github-token: ${{ secrets.VENDIR_GITHUB_TOKEN }} # only needed for private deps
+          # Only for dependencies whose upstream moves the locked ref (e.g. a
+          # re-created tag), so the locked commit can't be fetched anymore.
+          # They are refreshed, not compared against the committed files.
+          unpinned-paths: |
+            vendor/github.com/org/repo/dir
 ```
 
 Example Terraform/OpenTofu module workflow:

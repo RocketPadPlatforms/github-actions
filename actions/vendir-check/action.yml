@@ -22,6 +22,17 @@ inputs:
       empty to rely on unauthenticated/public access.
     required: false
     default: ""
+  unpinned-paths:
+    description: >
+      Newline-separated vendored paths, relative to working-directory
+      (e.g. `vendor/github.com/org/repo/dir`), whose upstream ref is moved
+      after it was locked (e.g. a re-created tag), so the locked commit is
+      no longer fetchable. Each is refreshed to what its ref points at now
+      into a temporary lock, and is not compared against the committed
+      files or lock entry. Everything else is checked as usual. Leave empty
+      to check every path.
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -33,6 +44,8 @@ runs:
       uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
     - shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        UNPINNED_PATHS: ${{ inputs.unpinned-paths }}
       run: |
         set -euo pipefail
 
@@ -40,13 +53,57 @@ runs:
           git config --global url."https://x-access-token:${{ inputs.github-token }}@github.com/".insteadOf "https://github.com/"
         fi
 
-        vendir sync -l
+        # Prints a lock file without the entries of the unpinned paths. An
+        # entry is a "  - " item of a directory's contents, ending in its
+        # "    path: <content path>" line.
+        strip() {
+          awk '
+            BEGIN { n = split(ENVIRON["UNPINNED_PATHS"], s, "\n") }
+            function flush() { if (!drop) printf "%s", buf; buf = ""; drop = 0 }
+            /^  - / { flush() }
+            { buf = buf $0 "\n" }
+            /^    path: / {
+              p = substr($0, 11)
+              for (i = 1; i <= n; i++)
+                if (s[i] != "" && (s[i] == p || substr(s[i], length(s[i]) - length(p)) == "/" p)) drop = 1
+            }
+            END { flush() }' "$1"
+        }
+
+        lock=vendir.lock.yml
+        if [ -n "$UNPINNED_PATHS" ]; then
+          # Refresh the unpinned paths into a copy of the lock, so that the
+          # committed one stays untouched and the locked sync below can still
+          # fetch them.
+          lock=$(mktemp)
+          cp vendir.lock.yml "$lock"
+          while IFS= read -r path; do
+            [ -z "$path" ] || vendir sync -d "$path" --lock-file "$lock"
+          done <<< "$UNPINNED_PATHS"
+        fi
+
+        vendir sync -l --lock-file "$lock"
+
+        if [ -n "$UNPINNED_PATHS" ]; then
+          while IFS= read -r path; do
+            [ -z "$path" ] || git checkout -- "$path"
+          done <<< "$UNPINNED_PATHS"
+        fi
 
         changed_files=$(git diff --name-only -- vendor/ vendir.lock.yml)
+        if [ "$lock" != vendir.lock.yml ] && ! diff -u <(strip vendir.lock.yml) <(strip "$lock"); then
+          changed_files=$(printf '%s\n%s\n' "$changed_files" vendir.lock.yml | sed '/^$/d')
+        fi
 
         {
           echo "## Vendir Check"
           echo
+          if [ -n "$UNPINNED_PATHS" ]; then
+            echo "Not verified (unpinned):"
+            echo
+            echo "$UNPINNED_PATHS" | sed 's/^/- `/;s/$/`/'
+            echo
+          fi
         } >> "$GITHUB_STEP_SUMMARY"
 
         if [ -n "$changed_files" ]; then
