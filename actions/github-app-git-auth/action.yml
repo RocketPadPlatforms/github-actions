@@ -6,9 +6,12 @@ description: >
   invocation) can access private repositories the App is installed on -
   without inheriting or leaking the current job's own checkout credentials.
 inputs:
+  client-id:
+    description: "GitHub App Client ID."
+    required: false
   app-id:
-    description: "GitHub App ID."
-    required: true
+    description: "Deprecated: use client-id."
+    required: false
   private-key:
     description: "GitHub App private key (PEM)."
     required: true
@@ -32,6 +35,7 @@ runs:
     - id: app-token
       uses: actions/create-github-app-token@v3
       with:
+        client-id: ${{ inputs.client-id }}
         app-id: ${{ inputs.app-id }}
         private-key: ${{ inputs.private-key }}
         owner: ${{ inputs.owner }}

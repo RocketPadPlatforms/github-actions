@@ -119,8 +119,8 @@ jobs:
       # private repository (e.g. git::https://github.com/OWNER/private-module.git).
       - uses: RocketPadPlatforms/github-actions/actions/github-app-git-auth@v1
         with:
-          app-id: ${{ secrets.RPP_CI_REPO_READER_APP_ID }}
-          private-key: ${{ secrets.RPP_CI_REPO_READER_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           repositories: private-module
       - uses: RocketPadPlatforms/github-actions/actions/opentofu-validate@v1
 ```
