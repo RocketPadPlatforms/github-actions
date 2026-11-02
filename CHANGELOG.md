@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.4.0...v1.5.0) (2026-11-02)
+
+
+### Features
+
+* support client-id in github-app-git-auth ([c6c7261](https://github.com/RocketPadPlatforms/github-actions/commit/c6c726133cb8c1930c40d99dc8def02b39fc6572))
+
 ## [1.4.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.3.0...v1.4.0) (2026-10-21)
 
 
