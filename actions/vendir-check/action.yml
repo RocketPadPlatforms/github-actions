@@ -24,6 +24,12 @@ inputs:
       empty to rely on unauthenticated/public access.
     required: false
     default: ""
+  github-api-token:
+    description: >
+      Token for vendir's GitHub API calls (githubRelease sources), to avoid
+      the unauthenticated rate limit, which runners sharing an IP hit.
+    required: false
+    default: ${{ github.token }}
 runs:
   using: "composite"
   steps:
@@ -52,6 +58,8 @@ runs:
         chmod +x "$RUNNER_TEMP/vendir-check/bin/yq"
     - shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        VENDIR_GITHUB_API_TOKEN: ${{ inputs.github-api-token }}
       run: |
         set -euo pipefail
 
