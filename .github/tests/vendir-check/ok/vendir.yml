@@ -1,0 +1,47 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: tagged
+    git:
+      url: https://example.invalid/tagged.git
+      ref: v1.2.3
+  - path: aliased
+    git:
+      url: "@REPO@"
+      ref: v1.0.0
+  - path: pinned
+    git:
+      url: https://example.invalid/pinned.git
+      ref: 0123456789abcdef0123456789abcdef01234567
+  - path: moving
+    git:
+      url: https://example.invalid/moving.git
+      ref: origin/main
+  - path: selected
+    git:
+      url: https://example.invalid/selected.git
+      refSelection:
+        semver:
+          constraints: ">=1.0.0"
+  - path: released
+    githubRelease:
+      slug: example/released
+      tag: v0.22.0
+  - path: latest-release
+    githubRelease:
+      slug: example/latest
+      latest: true
+  - path: by-hand
+    manual: {}
+  - path: same
+    git:
+      url: https://example.invalid/same.git
+      ref: v1.0.0
+- path: other
+  contents:
+  - path: same
+    git:
+      url: https://example.invalid/same.git
+      ref: v2.0.0

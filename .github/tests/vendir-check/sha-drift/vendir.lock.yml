@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: LockConfig
+directories:
+- path: vendor
+  contents:
+  - path: pinned
+    git:
+      commitTitle: older commit
+      sha: fedcba9876543210fedcba9876543210fedcba98

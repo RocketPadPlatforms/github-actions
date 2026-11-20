@@ -2,7 +2,9 @@ name: "Vendir Check"
 description: >
   Verifies that a committed deps/vendor/ tree is a faithful, reproducible
   materialization of vendir.yml + vendir.lock.yml, by re-running `vendir sync
-  -l` (locked mode, pinned to vendir.lock.yml) and failing on any diff. Does
+  -l` (locked mode, pinned to vendir.lock.yml) and failing on any diff.
+  Before that, fails when a ref pinned in vendir.yml is not the one
+  vendir.lock.yml records (a bump committed without `vendir sync`). Does
   not pick up upstream movement for mutable refs - that is a deliberate,
   separate action (bump the pin, run `vendir sync` without `-l`, review the
   diff).
@@ -31,6 +33,23 @@ runs:
         version: ${{ inputs.vendir-version }}
     - if: inputs.vendir-version == ''
       uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
+    - name: Install yq 4.53.3
+      shell: bash
+      run: |
+        set -euo pipefail
+        case "$(uname -m)" in
+          x86_64|amd64) arch=amd64 sha=fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4 ;;
+          aarch64|arm64) arch=arm64 sha=578648e463a11c1b6db6010cbf41eafed6bee79466fcffa1bb446672cf7945ea ;;
+          *)
+            echo "::error::Unsupported architecture: $(uname -m)" >&2
+            exit 1
+            ;;
+        esac
+        mkdir -p "$RUNNER_TEMP/vendir-check/bin"
+        curl -fsSL -o "$RUNNER_TEMP/vendir-check/bin/yq" \
+          "https://github.com/mikefarah/yq/releases/download/v4.53.3/yq_linux_${arch}"
+        echo "${sha}  $RUNNER_TEMP/vendir-check/bin/yq" | sha256sum -c -
+        chmod +x "$RUNNER_TEMP/vendir-check/bin/yq"
     - shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
@@ -39,6 +58,8 @@ runs:
         if [ -n "${{ inputs.github-token }}" ]; then
           git config --global url."https://x-access-token:${{ inputs.github-token }}@github.com/".insteadOf "https://github.com/"
         fi
+
+        PATH="$RUNNER_TEMP/vendir-check/bin:$PATH" "$GITHUB_ACTION_PATH/check-refs.sh" vendir.yml vendir.lock.yml
 
         vendir sync -l
 

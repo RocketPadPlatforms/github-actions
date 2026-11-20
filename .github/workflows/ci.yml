@@ -25,6 +25,14 @@ jobs:
       - uses: ./actions/setup-vendir
       - uses: ./actions/setup-opentofu
 
+  # Runs actions/vendir-check/check-refs.sh against the fixtures in
+  # .github/tests/vendir-check; the runner image ships yq v4.
+  vendir-check-refs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: .github/tests/vendir-check/run.sh
+
   # Runs actions/kind-registry-mirror against a kind cluster and a local
   # zot pull-through cache on the kind network: no mirror, an unreachable
   # mirror, and a working one that each default registry is pulled

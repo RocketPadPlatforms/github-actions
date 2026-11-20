@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: loki
+    git:
+      url: "@REPO@"
+      ref: v2.0.0
