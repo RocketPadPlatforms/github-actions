@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/RocketPadPlatforms/github-actions/compare/v1.5.0...v1.5.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **vendir-check:** authenticate GitHub API calls ([a93d090](https://github.com/RocketPadPlatforms/github-actions/commit/a93d090f32cbfe01296729d454d4c5dc7c9ac550))
+* **vendir-check:** compare refs with the lock ([13ad5f9](https://github.com/RocketPadPlatforms/github-actions/commit/13ad5f928c4b52819b1b2ec2f7253f99ea178569))
+
 ## [1.5.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.4.0...v1.5.0) (2026-11-02)
 
 
