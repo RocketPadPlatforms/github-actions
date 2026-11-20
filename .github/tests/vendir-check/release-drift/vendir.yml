@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: secretgen
+    githubRelease:
+      slug: carvel-dev/secretgen-controller
+      tag: v0.22.0

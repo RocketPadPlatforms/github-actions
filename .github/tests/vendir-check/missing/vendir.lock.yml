@@ -1,0 +1,11 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: LockConfig
+directories:
+- path: vendor
+  contents:
+  - path: present
+    git:
+      commitTitle: release 1.0.0
+      sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      tags:
+      - v1.0.0

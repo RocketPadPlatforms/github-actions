@@ -1,0 +1,56 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: LockConfig
+directories:
+- path: vendor
+  contents:
+  - path: tagged
+    git:
+      commitTitle: release 1.2.3
+      sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      tags:
+      - v1.2.3-alias
+      - v1.2.3
+  - path: aliased
+    git:
+      commitTitle: first
+      sha: "@SHA1@"
+      tags:
+      - pkg/v1.0.0
+  - path: pinned
+    git:
+      commitTitle: pinned commit
+      sha: 0123456789abcdef0123456789abcdef01234567
+      tags:
+      - v0.2.0-7-g0123456
+  - path: moving
+    git:
+      commitTitle: whatever main is today
+      sha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  - path: selected
+    git:
+      commitTitle: release 1.4.0
+      sha: cccccccccccccccccccccccccccccccccccccccc
+      tags:
+      - v1.4.0
+  - path: released
+    githubRelease:
+      tag: v0.22.0
+      url: https://api.github.com/repos/example/released/releases/1
+  - path: latest-release
+    githubRelease:
+      tag: v9.9.9
+      url: https://api.github.com/repos/example/latest/releases/2
+  - path: same
+    git:
+      commitTitle: release 1.0.0
+      sha: dddddddddddddddddddddddddddddddddddddddd
+      tags:
+      - v1.0.0
+- path: other
+  contents:
+  - path: same
+    git:
+      commitTitle: release 2.0.0
+      sha: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+      tags:
+      - v2.0.0

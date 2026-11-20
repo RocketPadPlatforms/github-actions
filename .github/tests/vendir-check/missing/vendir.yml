@@ -1,0 +1,13 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: present
+    git:
+      url: https://example.invalid/present.git
+      ref: v1.0.0
+  - path: added
+    git:
+      url: https://example.invalid/added.git
+      ref: v1.0.0

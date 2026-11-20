@@ -1,0 +1,9 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+- path: vendor
+  contents:
+  - path: gone
+    git:
+      url: "@REPO@-missing"
+      ref: v1.0.0
