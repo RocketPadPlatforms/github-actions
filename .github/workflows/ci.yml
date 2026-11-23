@@ -53,6 +53,37 @@ jobs:
           test "$MULTI" = $'line1\nline2'
           test -z "${TMPDIR:-}" || test -d "$TMPDIR"
 
+  # setup: "false" in jsonnet-lint and vendir-check: fails while the tools
+  # are missing, and lints with a jsonnet-lint installed by an earlier step.
+  skip-setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - id: lint-missing
+        continue-on-error: true
+        uses: ./actions/jsonnet-lint
+        with:
+          path: .github/tests/skip-setup
+          setup: "false"
+      - id: vendir-missing
+        continue-on-error: true
+        uses: ./actions/vendir-check
+        with:
+          setup: "false"
+      - name: Expect both to fail without their tools
+        env:
+          LINT: ${{ steps.lint-missing.outcome }}
+          VENDIR: ${{ steps.vendir-missing.outcome }}
+        run: |
+          set -euo pipefail
+          test "$LINT" = failure
+          test "$VENDIR" = failure
+      - uses: ./actions/setup-jsonnet
+      - uses: ./actions/jsonnet-lint
+        with:
+          path: .github/tests/skip-setup
+          setup: "false"
+
   # Runs actions/kind-registry-mirror against a kind cluster and a local
   # zot pull-through cache on the kind network: no mirror, an unreachable
   # mirror, and a working one that each default registry is pulled

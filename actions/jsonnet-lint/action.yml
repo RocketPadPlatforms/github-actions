@@ -18,15 +18,28 @@ inputs:
   jsonnet-version:
     description: "go-jsonnet release version to install, without the leading 'v'. Leave empty to use setup-jsonnet's default."
     required: false
+  setup:
+    description: >
+      Install jsonnet with setup-jsonnet. Set to "false" when jsonnet-lint
+      is already on PATH, e.g. from actions/nix-develop.
+    required: false
+    default: "true"
 runs:
   using: "composite"
   steps:
-    - if: inputs.jsonnet-version != ''
+    - if: inputs.setup == 'true' && inputs.jsonnet-version != ''
       uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
       with:
         version: ${{ inputs.jsonnet-version }}
-    - if: inputs.jsonnet-version == ''
+    - if: inputs.setup == 'true' && inputs.jsonnet-version == ''
       uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
+    - if: inputs.setup != 'true'
+      shell: bash
+      run: |
+        if ! command -v jsonnet-lint > /dev/null; then
+          echo "::error::jsonnet-lint is not on PATH. Install it first (e.g. with actions/nix-develop) or leave setup at \"true\"." >&2
+          exit 1
+        fi
     - shell: bash
       run: |
         set -euo pipefail

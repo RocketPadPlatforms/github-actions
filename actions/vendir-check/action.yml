@@ -30,16 +30,34 @@ inputs:
       the unauthenticated rate limit, which runners sharing an IP hit.
     required: false
     default: ${{ github.token }}
+  setup:
+    description: >
+      Install vendir with setup-vendir and yq from its release. Set to
+      "false" when both are already on PATH, e.g. from actions/nix-develop.
+    required: false
+    default: "true"
 runs:
   using: "composite"
   steps:
-    - if: inputs.vendir-version != ''
+    - if: inputs.setup == 'true' && inputs.vendir-version != ''
       uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
       with:
         version: ${{ inputs.vendir-version }}
-    - if: inputs.vendir-version == ''
+    - if: inputs.setup == 'true' && inputs.vendir-version == ''
       uses: RocketPadPlatforms/github-actions/actions/setup-vendir@v1
+    - if: inputs.setup != 'true'
+      shell: bash
+      run: |
+        missing=0
+        for tool in vendir yq; do
+          if ! command -v "$tool" > /dev/null; then
+            echo "::error::$tool is not on PATH. Install it first (e.g. with actions/nix-develop) or leave setup at \"true\"." >&2
+            missing=1
+          fi
+        done
+        exit "$missing"
     - name: Install yq 4.53.3
+      if: inputs.setup == 'true'
       shell: bash
       run: |
         set -euo pipefail

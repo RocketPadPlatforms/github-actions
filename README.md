@@ -27,7 +27,7 @@ custom scripting beyond what the task actions below cover.
 
 ### Task actions
 
-Higher-level actions that install the tool they need themselves and run one specific job, mirroring the jobs previously defined in `gitlab-ci-templates`/`.gitlab-ci.yml`.
+Higher-level actions that install the tool they need themselves and run one specific job, mirroring the jobs previously defined in `gitlab-ci-templates`/`.gitlab-ci.yml`. `jsonnet-lint` and `vendir-check` skip the install with `setup: "false"`, see [nix-develop](#nix-develop).
 
 | Action | Equivalent of | Description |
 |---|---|---|
@@ -235,6 +235,16 @@ like the others. Not loaded:
 `PATH` for the rest of the job. Use `mkShellNoCC` for dev shells in CI
 unless the job compiles C. The dev shell stays protected from Nix garbage
 collection until the job ends.
+
+`jsonnet-lint` and `vendir-check` install their tools themselves unless
+`setup: "false"` is passed; then they use the dev shell's `jsonnet-lint`,
+`vendir` and `yq`, and fail when one is missing:
+
+```yaml
+      - uses: RocketPadPlatforms/github-actions/actions/jsonnet-lint@v1
+        with:
+          setup: "false"
+```
 
 ## Versioning & tagging
 
