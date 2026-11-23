@@ -220,10 +220,20 @@ Inputs:
 | `installable` | `.#default` | Flake installable of the dev shell, passed to `nix develop`. |
 
 What a `shellHook` prints goes to the log; variables it exports are loaded
-like the others. Not loaded: the temporary directories `nix develop`
-removes when it exits (`TMPDIR`, `TMP`, `TEMP`, `TEMPDIR`,
-`NIX_BUILD_TOP`) and variables of the runner's shell (`HOME`, `PWD`,
-`OLDPWD`, `SHLVL`, `_`). The dev shell stays protected from Nix garbage
+like the others. Not loaded:
+
+- the temporary directories `nix develop` removes when it exits (`TMPDIR`,
+  `TMP`, `TEMP`, `TEMPDIR`, `NIX_BUILD_TOP`)
+- variables of the runner's shell (`HOME`, `PWD`, `OLDPWD`, `SHLVL`, `_`)
+- stdenv's build shell settings (`SHELL`, `CONFIG_SHELL`, `HOST_PATH`,
+  `NIX_GCROOT`)
+- names starting with a lower-case letter: the attributes of the dev
+  shell's derivation (`out`, `name`, `shellHook`, ...). Use upper-case names
+  for variables a dev shell sets for its users.
+
+`mkShell` also puts a C compiler, binutils and GNU coreutils in front of
+`PATH` for the rest of the job. Use `mkShellNoCC` for dev shells in CI
+unless the job compiles C. The dev shell stays protected from Nix garbage
 collection until the job ends.
 
 ## Versioning & tagging
