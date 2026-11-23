@@ -1,0 +1,19 @@
+name: "Nix Develop"
+description: >
+  Loads the environment of a Nix flake dev shell into the job, so all
+  following steps, including other actions, run with its tools on PATH and
+  its variables set. Needs Nix with flakes: the `nix` label on the
+  self-hosted runners, or cachix/install-nix-action on GitHub-hosted ones.
+inputs:
+  installable:
+    description: "Flake installable of the dev shell, passed to `nix develop` (e.g. .#ci)."
+    required: false
+    default: ".#default"
+runs:
+  using: "composite"
+  steps:
+    - name: Load ${{ inputs.installable }}
+      shell: bash
+      env:
+        INSTALLABLE: ${{ inputs.installable }}
+      run: '"$GITHUB_ACTION_PATH/nix-develop.sh" "$INSTALLABLE"'

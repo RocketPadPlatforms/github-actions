@@ -33,6 +33,26 @@ jobs:
       - uses: actions/checkout@v7
       - run: .github/tests/vendir-check/run.sh
 
+  # Runs actions/nix-develop/nix-develop.sh against the test flake in
+  # .github/tests/nix-develop, then uses the action itself and checks that
+  # the following steps see the dev shell.
+  nix-develop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - run: .github/tests/nix-develop/run.sh
+      - uses: ./actions/nix-develop
+        with:
+          installable: ./.github/tests/nix-develop
+      - name: Expect the dev shell in the following steps
+        run: |
+          set -euo pipefail
+          hello
+          test "$SINGLE" = one
+          test "$MULTI" = $'line1\nline2'
+          test -z "${TMPDIR:-}" || test -d "$TMPDIR"
+
   # Runs actions/kind-registry-mirror against a kind cluster and a local
   # zot pull-through cache on the kind network: no mirror, an unreachable
   # mirror, and a working one that each default registry is pulled
