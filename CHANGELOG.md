@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/RocketPadPlatforms/github-actions/compare/v1.5.1...v1.6.0) (2026-11-23)
+
+
+### Features
+
+* add nix-develop action ([184f46f](https://github.com/RocketPadPlatforms/github-actions/commit/184f46fbeee2a152a4d20618ba8b90aba56c9126))
+* add setup input to lint and vendir-check ([04a9070](https://github.com/RocketPadPlatforms/github-actions/commit/04a9070f472c17753a82773eecb9c9a15cc2b4ed))
+
+
+### Bug Fixes
+
+* **nix-develop:** skip derivation attributes ([4f0bec6](https://github.com/RocketPadPlatforms/github-actions/commit/4f0bec600163d4dc98e2cb04858b7f1923ec4e12))
+
 ## [1.5.1](https://github.com/RocketPadPlatforms/github-actions/compare/v1.5.0...v1.5.1) (2026-11-20)
 
 
