@@ -10,9 +10,10 @@ if ! command -v nix > /dev/null; then
   exit 1
 fi
 
-# The temporary directories of `nix develop`, deleted when it exits, and
-# variables that belong to the runner or the shell.
-skip=" TMPDIR TMP TEMP TEMPDIR NIX_BUILD_TOP HOME PWD OLDPWD SHLVL _ "
+# The temporary directories of `nix develop`, deleted when it exits,
+# variables that belong to the runner or the shell, and stdenv's build
+# shell settings.
+skip=" TMPDIR TMP TEMP TEMPDIR NIX_BUILD_TOP HOME PWD OLDPWD SHLVL _ SHELL CONFIG_SHELL HOST_PATH NIX_GCROOT "
 
 env_file="$(mktemp)"
 trap 'rm -f "$env_file"' EXIT
@@ -47,6 +48,10 @@ exported=0
 
     # Exported shell functions (BASH_FUNC_name%%) are not variables.
     [[ "$name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    # Lower-case names are attributes of the dev shell's derivation (out,
+    # name, shellHook, nativeBuildInputs, ...), which would collide with
+    # variables of scripts and Makefiles.
+    [[ "$name" != [a-z]* ]] || continue
     [[ "$skip" != *" $name "* ]] || continue
     if [ -n "${!name+set}" ] && [ "${!name}" = "$value" ]; then
       continue

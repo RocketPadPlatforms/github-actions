@@ -55,7 +55,8 @@ check "keeps the dev shell from being garbage-collected" \
   has_root "$work/ok.temp/nix-develop-profile"
 check "prints the shellHook's output" grep -qxF hook=printed "$work/ok.out"
 check "does not export the shellHook's output" test -z "$(env_value hook "$work/ok.env")"
-for name in TMPDIR TMP TEMP TEMPDIR NIX_BUILD_TOP HOME PWD OLDPWD SHLVL _; do
+for name in TMPDIR TMP TEMP TEMPDIR NIX_BUILD_TOP HOME PWD OLDPWD SHLVL _ \
+  out name shell builder stdenv shellHook nativeBuildInputs SHELL CONFIG_SHELL HOST_PATH NIX_GCROOT; do
   check "does not export $name" not grep -q "^$name<<" "$work/ok.env"
 done
 
