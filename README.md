@@ -17,6 +17,7 @@ custom scripting beyond what the task actions below cover.
 | [`actions/setup-kubeconform`](./actions/setup-kubeconform) | `kubeconform` ([yannh/kubeconform](https://github.com/yannh/kubeconform)) |
 | [`actions/setup-vendir`](./actions/setup-vendir) | `vendir` ([carvel-dev/vendir](https://github.com/carvel-dev/vendir)) |
 | [`actions/setup-opentofu`](./actions/setup-opentofu) | `tofu` ([opentofu/opentofu](https://github.com/opentofu/opentofu)) |
+| [`actions/nix-develop`](./actions/nix-develop) | The tools and variables of the repository's Nix flake dev shell. See [below](#nix-develop). |
 
 ```yaml
 - uses: RocketPadPlatforms/github-actions/actions/setup-jsonnet@v1
@@ -191,6 +192,39 @@ Inputs:
 
 Images pulled by the runner's Docker daemon, such as the kind node image,
 are not affected.
+
+### nix-develop
+
+Loads a flake dev shell into the job once: all following steps, including
+other actions, find its tools on `PATH` and see its variables, so `run:`
+steps need no `nix develop -c` prefix. Needs Nix with flakes on the runner:
+ask for the `nix` label on the self-hosted runners, or install Nix first on
+GitHub-hosted ones (e.g. with `cachix/install-nix-action`).
+
+```yaml
+jobs:
+  check:
+    runs-on: [self-hosted, linux, x64, nix]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: RocketPadPlatforms/github-actions/actions/nix-develop@v1
+        with:
+          installable: .#ci
+      - run: make check
+```
+
+Inputs:
+
+| Input | Default | Description |
+|---|---|---|
+| `installable` | `.#default` | Flake installable of the dev shell, passed to `nix develop`. |
+
+What a `shellHook` prints goes to the log; variables it exports are loaded
+like the others. Not loaded: the temporary directories `nix develop`
+removes when it exits (`TMPDIR`, `TMP`, `TEMP`, `TEMPDIR`,
+`NIX_BUILD_TOP`) and variables of the runner's shell (`HOME`, `PWD`,
+`OLDPWD`, `SHLVL`, `_`). The dev shell stays protected from Nix garbage
+collection until the job ends.
 
 ## Versioning & tagging
 
